@@ -1,0 +1,11 @@
+version: '3.8'
+
+services:
+  smtp-receiver:
+    build: .
+    container_name: smtp-receiver-app
+    ports:
+      - "1025:1025"
+    volumes:
+      - ./scans/users:/scans/users
+    restart: unless-stopped
