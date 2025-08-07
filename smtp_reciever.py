@@ -69,6 +69,12 @@ class CustomHandler:
         return '250 OK'
 
 async def main():
+    # Check if Test Mode is enabled
+    if os.environ.get('TEST_MODE', 'false').lower() == 'true':
+        from test_sender import run_test_mailer
+        # Start the test mailer as a background task
+        asyncio.create_task(run_test_mailer())
+
     logger.info("Starting SMTP server...")
     handler = CustomHandler()
     controller = Controller(handler, hostname='0.0.0.0', port=1025)

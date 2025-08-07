@@ -4,8 +4,9 @@ import sys
 
 # --- Logger Configuration ---
 
-# Get logging mode from environment variable, default to 'PRODUCTION'
+# Get configuration from environment variables
 LOGGING_MODE = os.environ.get('LOGGING_MODE', 'PRODUCTION').upper()
+TEST_MODE = os.environ.get('TEST_MODE', 'false').upper()
 
 # Create a logger
 logger = logging.getLogger('smtp_receiver')
@@ -18,16 +19,20 @@ class InfoFilter(logging.Filter):
     def filter(self, record):
         return record.levelno == logging.INFO
 
-if LOGGING_MODE == 'DEBUG':
-    # In DEBUG mode, log to console
+# If Test Mode is on, force DEBUG logging to console for easy monitoring.
+if TEST_MODE == 'TRUE' or LOGGING_MODE == 'DEBUG':
+    # In DEBUG or TEST mode, log to console
     handler = logging.StreamHandler(sys.stdout)
     handler.setLevel(logging.DEBUG)
     formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
     handler.setFormatter(formatter)
     logger.addHandler(handler)
-    logger.info("Logging configured for DEBUG mode.")
+    if TEST_MODE == 'TRUE':
+        logger.info("Test mode is enabled. Forcing DEBUG logging to console.")
+    else:
+        logger.info("Logging configured for DEBUG mode.")
 
-else: # PRODUCTION or any other value
+else: # PRODUCTION mode
     # In PRODUCTION mode, log to separate files for audit and errors
 
     # --- Audit Log Handler (INFO) ---

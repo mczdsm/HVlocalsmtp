@@ -15,6 +15,7 @@ USER appuser
 # Copy the application files into the container
 COPY logger_config.py .
 COPY smtp_reciever.py .
+COPY test_sender.py .
 
 # Create the directory for scans and log files, and set ownership
 RUN mkdir -p /scans/users && \
