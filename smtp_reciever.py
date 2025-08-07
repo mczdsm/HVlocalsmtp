@@ -7,6 +7,25 @@ from email import policy
 from email.parser import BytesParser
 from logger_config import logger
 
+def _find_unique_filepath(filepath):
+    """
+    Checks if a filepath exists. If it does, it appends a counter
+    (e.g., (1), (2)) to the filename until a unique path is found.
+    """
+    if not os.path.exists(filepath):
+        return filepath
+
+    directory, filename = os.path.split(filepath)
+    name, ext = os.path.splitext(filename)
+    counter = 1
+
+    while True:
+        new_name = f"{name}({counter}){ext}"
+        new_filepath = os.path.join(directory, new_name)
+        if not os.path.exists(new_filepath):
+            return new_filepath
+        counter += 1
+
 class CustomHandler:
     async def handle_DATA(self, server, session: Session, envelope: Envelope):
         logger.debug(f"Received email from: {envelope.mail_from}")
@@ -51,10 +70,16 @@ class CustomHandler:
                     filename = 'scan.pdf'
                     logger.debug("Attachment has no filename, defaulting to 'scan.pdf'")
 
-                file_path = os.path.join(folder_path, filename)
+                original_filepath = os.path.join(folder_path, filename)
+                final_filepath = _find_unique_filepath(original_filepath)
+
+                if original_filepath != final_filepath:
+                    final_filename = os.path.basename(final_filepath)
+                    logger.info(f"File '{filename}' already exists. Saving as '{final_filename}' instead.")
+                    filename = final_filename
 
                 try:
-                    with open(file_path, 'wb') as f:
+                    with open(final_filepath, 'wb') as f:
                         f.write(part.get_payload(decode=True))
                     logger.info(f"Saved PDF scan '{filename}' to user folder '{local_part}'")
                     attachment_count += 1
