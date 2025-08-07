@@ -15,5 +15,5 @@ services:
       - LOGGING_MODE=DEBUG
       # TEST_MODE: 'true' or 'false'.
       # - true: Enables automatic sending of test emails to the server.
-      - TEST_MODE=false
+      - TEST_MODE=true
     restart: unless-stopped
