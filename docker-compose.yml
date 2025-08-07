@@ -8,4 +8,12 @@ services:
       - "1025:1025"
     volumes:
       - ./scans/users:/scans/users
+    environment:
+      # LOGGING_MODE: 'DEBUG' or 'PRODUCTION'.
+      # - DEBUG: Verbose console logging.
+      # - PRODUCTION: Separates audit and error logs into files.
+      - LOGGING_MODE=DEBUG
+      # TEST_MODE: 'true' or 'false'.
+      # - true: Enables automatic sending of test emails to the server.
+      - TEST_MODE=false
     restart: unless-stopped
