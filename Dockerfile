@@ -12,11 +12,15 @@ RUN pip install --no-cache-dir -r requirements.txt
 RUN groupadd -r appuser && useradd -r -g appuser appuser
 USER appuser
 
-# Copy the current directory contents into the container at /app
+# Copy the application files into the container
+COPY logger_config.py .
 COPY smtp_reciever.py .
 
-# Create the directory for scans and set ownership
-RUN mkdir -p /scans/users && chown appuser:appuser /scans/users
+# Create the directory for scans and log files, and set ownership
+RUN mkdir -p /scans/users && \
+    touch /scans/users/audit.log && \
+    touch /scans/users/error.log && \
+    chown -R appuser:appuser /scans/users
 
 # Make port 1025 available to the world outside this container
 EXPOSE 1025

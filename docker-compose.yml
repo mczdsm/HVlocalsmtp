@@ -8,4 +8,6 @@ services:
       - "1025:1025"
     volumes:
       - ./scans/users:/scans/users
+    environment:
+      - LOGGING_MODE=DEBUG
     restart: unless-stopped
