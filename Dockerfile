@@ -8,20 +8,24 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Create a non-root user and group
+# Create the directory for scans as ROOT before we create the non-root user.
+RUN mkdir -p /scans/users && \
+    touch /scans/users/audit.log && \
+    touch /scans/users/error.log
+
+# Create a non-root user that will run the application
 RUN groupadd -r appuser && useradd -r -g appuser appuser
+
+# Give the new user ownership of the application and scan directories
+RUN chown -R appuser:appuser /app && chown -R appuser:appuser /scans
+
+# Switch to the non-root user for security
 USER appuser
 
-# Copy the application files into the container
+# Copy the application files. They will be owned by `appuser` because of the USER directive above.
 COPY logger_config.py .
 COPY smtp_reciever.py .
 COPY test_sender.py .
-
-# Create the directory for scans and log files, and set ownership
-RUN mkdir -p /scans/users && \
-    touch /scans/users/audit.log && \
-    touch /scans/users/error.log && \
-    chown -R appuser:appuser /scans/users
 
 # Make port 1025 available to the world outside this container
 EXPOSE 1025
