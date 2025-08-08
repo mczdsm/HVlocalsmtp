@@ -7,7 +7,9 @@ services:
     ports:
       - "1025:1025"
     volumes:
-      - ./scans/users:/scans/users
+      # Mount the named volume to the path the application expects.
+      # The app writes to /scans/users, so we mount the volume at /scans.
+      - scan_data:/scans
     environment:
       # LOGGING_MODE: 'DEBUG' or 'PRODUCTION'.
       # - DEBUG: Verbose console logging.
@@ -17,3 +19,23 @@ services:
       # - true: Enables automatic sending of test emails to the server.
       - TEST_MODE=false
     restart: unless-stopped
+
+  samba:
+    image: dperson/samba:latest
+    container_name: samba-server
+    # IMPORTANT: Replace 'YourStrongPassword' with a secure password.
+    environment:
+      - USER=winuser;YourStrongPassword;;filemanagers;1001
+      - GROUP=filemanagers;1001
+      # Defines a share named 'scans' that points to the /srv/scans directory inside this container.
+      - SHARE=scans;/srv/scans;yes;no;no;@filemanagers
+    ports:
+      - "139:139"
+      - "445:445"
+    volumes:
+      # Mount the named volume to the path that the SHARE variable uses.
+      - scan_data:/srv/scans
+    restart: unless-stopped
+
+volumes:
+  scan_data:
