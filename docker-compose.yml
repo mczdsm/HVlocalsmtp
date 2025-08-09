@@ -29,14 +29,14 @@ services:
       - GROUP=filemanagers;1001
       # Defines a share named 'scans' that points to the /srv/scans directory inside this container.
       - SHARE=scans;/srv/scans;yes;no;no;@filemanagers
-      # Force shares to be writable as a global option
-      - SAMBA_GLOBAL_OPTIONS=writable = yes
     ports:
       - "139:139"
       - "445:445"
     volumes:
       # Mount the named volume to the path that the SHARE variable uses.
       - scan_data:/srv/scans
+    # The -p flag is critical for setting ownership and permissions on the share
+    command: -p
     restart: unless-stopped
 
 volumes:
