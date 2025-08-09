@@ -29,6 +29,8 @@ services:
       - GROUP=filemanagers;1001
       # Defines a share named 'scans' that points to the /srv/scans directory inside this container.
       - SHARE=scans;/srv/scans;yes;no;no;@filemanagers
+      # Force shares to be writable as a global option
+      - SAMBA_GLOBAL_OPTIONS=writable = yes
     ports:
       - "139:139"
       - "445:445"

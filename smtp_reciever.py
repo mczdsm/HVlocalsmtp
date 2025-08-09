@@ -36,8 +36,7 @@ class CustomHandler:
         base_path = '/scans/users/'
         folder_path = os.path.join(base_path, local_part)
         try:
-            # Explicitly set directory permissions to be group-writable
-            os.makedirs(folder_path, mode=0o775, exist_ok=True)
+            os.makedirs(folder_path, exist_ok=True)
             logger.debug(f"Ensured directory exists: {folder_path}")
         except OSError as e:
             logger.error(f"Could not create directory {folder_path}: {e}")
@@ -68,9 +67,6 @@ class CustomHandler:
                         # 'xb' mode opens for exclusive creation, failing if the path exists.
                         with open(filepath, 'xb') as f:
                             f.write(part.get_payload(decode=True))
-
-                        # Explicitly set file permissions to be group-writable
-                        os.chmod(filepath, 0o664)
 
                         if counter > 0:
                             logger.info(f"File '{filename}' already exists. Saved as '{current_filename}'.")
