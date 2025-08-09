@@ -14,7 +14,7 @@ RUN mkdir -p /scans/users && \
     touch /scans/users/error.log
 
 # Create a non-root user with a static UID/GID to match the Samba container user
-RUN groupadd -r -g 1001 appuser && useradd -r -u 1001 -g 1001 appuser
+RUN groupadd -g 1001 appuser && useradd -u 1001 -g 1001 appuser
 
 # Give the new user ownership of the application and scan directories
 RUN chown -R 1001:1001 /app && chown -R 1001:1001 /scans
