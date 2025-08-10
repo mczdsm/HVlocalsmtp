@@ -9,7 +9,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Create a non-root user with a static UID/GID to match the Samba container user
-RUN groupadd -g 1001 appuser && useradd -u 1001 -g 1001 appuser
+RUN groupadd -g 1001 filemanagers && useradd -u 1001 -g 1001 appuser && usermod -a -G filemanagers appuser
 
 # Give the new user ownership of the application directory
 RUN chown -R 1001:1001 /app
