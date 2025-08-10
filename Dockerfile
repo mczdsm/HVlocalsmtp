@@ -8,8 +8,10 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Create the top-level scans directory as ROOT. The app will create subdirectories.
-RUN mkdir /scans
+# Create the directory for scans as ROOT before we create the non-root user.
+RUN mkdir -p /scans/users && \
+    touch /scans/users/audit.log && \
+    touch /scans/users/error.log
 
 # Create a non-root user with a static UID/GID to match the Samba container user
 RUN groupadd -g 1001 appuser && useradd -u 1001 -g 1001 appuser
