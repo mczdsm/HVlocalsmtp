@@ -8,11 +8,16 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Create the directory for scans as ROOT before we create the non-root user.
+RUN mkdir -p /scans/users && \
+    touch /scans/users/audit.log && \
+    touch /scans/users/error.log
+
 # Create a non-root user with a static UID/GID to match the Samba container user
 RUN groupadd -g 1001 appuser && useradd -u 1001 -g 1001 appuser
 
-# Give the new user ownership of the application directory
-RUN chown -R 1001:1001 /app
+# Give the new user ownership of the app and scans directories
+RUN chown -R 1001:1001 /app && chown -R 1001:1001 /scans
 
 # Switch to the non-root user for security
 USER appuser
