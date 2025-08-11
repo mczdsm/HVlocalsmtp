@@ -59,6 +59,7 @@ class CustomHandler:
                 # Set folder permissions to 0755 (owner rwx, group rx, others rx)
                 os.chmod(folder_path, 0o755)
             logger.debug(f"Ensured directory exists: {folder_path}")
+            os.chmod(folder_path, 0o755)
         except OSError as e:
             logger.error(f"Could not create directory {folder_path}: {e}")
             return '500 Internal server error'
