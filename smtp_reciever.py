@@ -56,6 +56,8 @@ class CustomHandler:
         folder_path = os.path.join(base_path, local_part)
         try:
             os.makedirs(folder_path, exist_ok=True)
+                # Set folder permissions to 0755 (owner rwx, group rx, others rx)
+                os.chmod(folder_path, 0o755)
             logger.debug(f"Ensured directory exists: {folder_path}")
         except OSError as e:
             logger.error(f"Could not create directory {folder_path}: {e}")
@@ -78,13 +80,15 @@ class CustomHandler:
                     logger.info(f"File '{filename}' already exists. Saving as '{final_filename}' instead.")
                     filename = final_filename
 
-                try:
-                    with open(final_filepath, 'wb') as f:
-                        f.write(part.get_payload(decode=True))
-                    logger.info(f"Saved PDF scan '{filename}' to user folder '{local_part}'")
-                    attachment_count += 1
-                except Exception as e:
-                    logger.error(f"Failed to save attachment {filename} to {file_path}: {e}")
+                    try:
+                        with open(final_filepath, 'wb') as f:
+                            f.write(part.get_payload(decode=True))
+                        # Set file permissions to 0666 (rw for all)
+                        os.chmod(final_filepath, 0o666)
+                        logger.info(f"Saved PDF scan '{filename}' to user folder '{local_part}'")
+                        attachment_count += 1
+                    except Exception as e:
+                        logger.error(f"Failed to save attachment {filename} to {final_filepath}: {e}")
             else:
                 logger.debug(f"Skipping non-PDF attachment with content type: {part.get_content_type()}")
 

@@ -29,6 +29,10 @@ services:
       - GROUP=filemanagers;1001
       # Defines a share named 'scans' that points to the /srv/scans directory inside this container.
       - SHARE=scans;/srv/scans;yes;no;no;@filemanagers
+      # Set file and directory creation masks to allow group write permissions
+      - CREATE_MASK=0775
+      - DIRECTORY_MASK=0775
+      - PERMISSIONS=true
     ports:
       - "139:139"
       - "445:445"
