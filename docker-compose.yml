@@ -21,21 +21,15 @@ services:
     restart: unless-stopped
 
   samba:
-    image: dperson/samba:latest
+    image: ghcr.io/servercontainers/samba:latest
     container_name: samba-server
     # IMPORTANT: Replace 'YourStrongPassword' with a secure password.
     environment:
-      - USER=winuser;YourStrongPassword;;filemanagers;1001
-      - GROUP=filemanagers;1001
-      # Defines a share named 'scans' that points to the /srv/scans directory inside this container.
-      - SHARE=scans;/srv/scans;yes;no;no;@filemanagers
-      # Set file and directory creation masks to allow group write permissions
-      - CREATE_MASK=0664
-      - DIRECTORY_MASK=0755
-      - PERMISSIONS=true
-      # Force user and group to ensure consistent ownership
-      - FORCE_USER=1001
-      - FORCE_GROUP=1001
+      - ACCOUNT_winuser=YourStrongPassword
+      - UID_winuser=1001
+      - GROUP_filemanagers=1001
+      - GROUPS_winuser=filemanagers
+      - SAMBA_VOLUME_CONFIG_scans=[scans];path=/srv/scans;browseable=yes;read only=no;guest ok=no;valid users=@filemanagers;create mask=0664;directory mask=0755;force user=1001;force group=1001
     ports:
       - "139:139"
       - "445:445"
