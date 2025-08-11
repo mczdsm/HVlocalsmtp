@@ -20,28 +20,18 @@ services:
       - TEST_MODE=true
     restart: unless-stopped
 
-  samba:
-    image: dperson/samba:latest
-    container_name: samba-server
-    # IMPORTANT: Replace 'YourStrongPassword' with a secure password.
-    environment:
-      - USER=winuser;YourStrongPassword;;filemanagers;1001
-      - GROUP=filemanagers;1001
-      # Defines a share named 'scans' that points to the /srv/scans directory inside this container.
-      - SHARE=scans;/srv/scans;yes;no;no;@filemanagers
-      # Set file and directory creation masks to allow group write permissions
-      - CREATE_MASK=0664
-      - DIRECTORY_MASK=0755
-      - PERMISSIONS=true
-      # Force user and group to ensure consistent ownership
-      - FORCE_USER=1001
-      - FORCE_GROUP=1001
+  webdav:
+    image: bytemark/webdav
+    container_name: webdav-server
     ports:
-      - "139:139"
-      - "445:445"
+      - "80:80" # Expose port 80 for HTTP WebDAV access
+    environment:
+      # IMPORTANT: Replace 'webuser' and 'YourWebDAVPassword' with secure credentials.
+      - USERNAME=webuser
+      - PASSWORD=YourWebDAVPassword
     volumes:
-      # Mount the named volume to the path that the SHARE variable uses.
-      - scan_data:/srv/scans
+      # Mount the named volume to the default WebDAV data directory.
+      - scan_data:/var/lib/dav
     restart: unless-stopped
 
 volumes:
