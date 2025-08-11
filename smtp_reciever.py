@@ -56,11 +56,11 @@ class CustomHandler:
         folder_path = os.path.join(base_path, local_part)
         try:
             os.makedirs(folder_path, exist_ok=True)
-            # Set folder permissions to allow Samba access but prevent folder deletion
-            # 755 = owner rwx, group/others rx (can't delete folder)
-            os.chmod(folder_path, 0o777)
-            # Set ownership to match Samba user (1001:1001)
-            os.chown(folder_path, 1001, 1001)
+            # Set folder permissions to allow WebDAV access
+            # 775 = owner rwx, group rwx, others rx
+            os.chmod(folder_path, 0o775)
+            # Set ownership to match Apache user (www-data)
+            os.chown(folder_path, 33, 33)
             logger.debug(f"Ensured directory exists: {folder_path}")
         except OSError as e:
             logger.error(f"Could not create directory {folder_path}: {e}")
@@ -86,11 +86,11 @@ class CustomHandler:
                 try:
                     with open(final_filepath, 'wb') as f:
                         f.write(part.get_payload(decode=True))
-                    # Set file permissions and ownership for Samba compatibility
-                    # 666 = owner/group/others can read/write
-                    os.chmod(final_filepath, 0o666)
-                    # Set ownership to match Samba user (1001:1001)
-                    os.chown(final_filepath, 1001, 1001)
+                    # Set file permissions and ownership for WebDAV compatibility
+                    # 664 = owner/group can read/write, others can read
+                    os.chmod(final_filepath, 0o664)
+                    # Set ownership to match Apache user (www-data)
+                    os.chown(final_filepath, 33, 33)
                     logger.info(f"Saved PDF scan '{filename}' to user folder '{local_part}'")
                     attachment_count += 1
                 except Exception as e:
