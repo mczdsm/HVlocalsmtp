@@ -57,7 +57,7 @@ class CustomHandler:
         try:
             os.makedirs(folder_path, exist_ok=True)
                 # Set folder permissions to 0755 (owner rwx, group rx, others rx)
-                os.chmod(folder_path, 0o755)
+            os.chmod(folder_path, 0o755)
             logger.debug(f"Ensured directory exists: {folder_path}")
             os.chmod(folder_path, 0o755)
         except OSError as e:
