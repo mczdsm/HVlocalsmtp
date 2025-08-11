@@ -56,10 +56,12 @@ class CustomHandler:
         folder_path = os.path.join(base_path, local_part)
         try:
             os.makedirs(folder_path, exist_ok=True)
-                # Set folder permissions to 0755 (owner rwx, group rx, others rx)
+            # Set folder permissions to allow Samba access but prevent folder deletion
+            # 755 = owner rwx, group/others rx (can't delete folder)
             os.chmod(folder_path, 0o755)
+            # Set ownership to match Samba user (1001:1001)
+            os.chown(folder_path, 1001, 1001)
             logger.debug(f"Ensured directory exists: {folder_path}")
-            os.chmod(folder_path, 0o755)
         except OSError as e:
             logger.error(f"Could not create directory {folder_path}: {e}")
             return '500 Internal server error'
@@ -81,15 +83,18 @@ class CustomHandler:
                     logger.info(f"File '{filename}' already exists. Saving as '{final_filename}' instead.")
                     filename = final_filename
 
-                    try:
-                        with open(final_filepath, 'wb') as f:
-                            f.write(part.get_payload(decode=True))
-                        # Set file permissions to 0666 (rw for all)
-                        os.chmod(final_filepath, 0o666)
-                        logger.info(f"Saved PDF scan '{filename}' to user folder '{local_part}'")
-                        attachment_count += 1
-                    except Exception as e:
-                        logger.error(f"Failed to save attachment {filename} to {final_filepath}: {e}")
+                try:
+                    with open(final_filepath, 'wb') as f:
+                        f.write(part.get_payload(decode=True))
+                    # Set file permissions and ownership for Samba compatibility
+                    # 664 = owner/group can read/write, others can read
+                    os.chmod(final_filepath, 0o664)
+                    # Set ownership to match Samba user (1001:1001)
+                    os.chown(final_filepath, 1001, 1001)
+                    logger.info(f"Saved PDF scan '{filename}' to user folder '{local_part}'")
+                    attachment_count += 1
+                except Exception as e:
+                    logger.error(f"Failed to save attachment {filename} to {final_filepath}: {e}")
             else:
                 logger.debug(f"Skipping non-PDF attachment with content type: {part.get_content_type()}")
 
