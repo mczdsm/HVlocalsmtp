@@ -7,6 +7,25 @@ from email import policy
 from email.parser import BytesParser
 from logger_config import logger
 
+def _find_unique_filepath(filepath):
+    """
+    Checks if a filepath exists. If it does, it appends a counter
+    (e.g., (1), (2)) to the filename until a unique path is found.
+    """
+    if not os.path.exists(filepath):
+        return filepath
+
+    directory, filename = os.path.split(filepath)
+    name, ext = os.path.splitext(filename)
+    counter = 1
+
+    while True:
+        new_name = f"{name}({counter}){ext}"
+        new_filepath = os.path.join(directory, new_name)
+        if not os.path.exists(new_filepath):
+            return new_filepath
+        counter += 1
+
 class CustomHandler:
     async def handle_DATA(self, server, session: Session, envelope: Envelope):
         logger.debug(f"Received email from: {envelope.mail_from}")
@@ -36,8 +55,9 @@ class CustomHandler:
         base_path = '/scans/users/'
         folder_path = os.path.join(base_path, local_part)
         try:
-            # Explicitly set directory permissions to be group-writable
-            os.makedirs(folder_path, mode=0o775, exist_ok=True)
+            os.makedirs(folder_path, exist_ok=True)
+                # Set folder permissions to 0755 (owner rwx, group rx, others rx)
+                os.chmod(folder_path, 0o755)
             logger.debug(f"Ensured directory exists: {folder_path}")
         except OSError as e:
             logger.error(f"Could not create directory {folder_path}: {e}")
@@ -52,40 +72,23 @@ class CustomHandler:
                     filename = 'scan.pdf'
                     logger.debug("Attachment has no filename, defaulting to 'scan.pdf'")
 
-                # --- Atomic file saving logic to prevent race conditions ---
-                base_name, ext = os.path.splitext(filename)
-                counter = 0
-                while True:
-                    # Determine the filename to try
-                    if counter == 0:
-                        current_filename = filename
-                    else:
-                        current_filename = f"{base_name}({counter}){ext}"
+                original_filepath = os.path.join(folder_path, filename)
+                final_filepath = _find_unique_filepath(original_filepath)
 
-                    filepath = os.path.join(folder_path, current_filename)
+                if original_filepath != final_filepath:
+                    final_filename = os.path.basename(final_filepath)
+                    logger.info(f"File '{filename}' already exists. Saving as '{final_filename}' instead.")
+                    filename = final_filename
 
                     try:
-                        # 'xb' mode opens for exclusive creation, failing if the path exists.
-                        with open(filepath, 'xb') as f:
+                        with open(final_filepath, 'wb') as f:
                             f.write(part.get_payload(decode=True))
-
-                        # Explicitly set file permissions to be group-writable
-                        os.chmod(filepath, 0o664)
-
-                        if counter > 0:
-                            logger.info(f"File '{filename}' already exists. Saved as '{current_filename}'.")
-
-                        logger.info(f"Saved PDF scan '{current_filename}' to user folder '{local_part}'")
+                        # Set file permissions to 0666 (rw for all)
+                        os.chmod(final_filepath, 0o666)
+                        logger.info(f"Saved PDF scan '{filename}' to user folder '{local_part}'")
                         attachment_count += 1
-                        break # Exit the loop on successful save
-
-                    except FileExistsError:
-                        # This occurs if the file was created by another process after our check.
-                        # Increment counter and the loop will try the next filename.
-                        counter += 1
                     except Exception as e:
-                        logger.error(f"Failed to save attachment {current_filename}: {e}")
-                        break # Exit loop on other errors
+                        logger.error(f"Failed to save attachment {filename} to {final_filepath}: {e}")
             else:
                 logger.debug(f"Skipping non-PDF attachment with content type: {part.get_content_type()}")
 
