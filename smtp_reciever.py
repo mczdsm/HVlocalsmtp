@@ -56,6 +56,10 @@ class CustomHandler:
         folder_path = os.path.join(base_path, local_part)
         try:
             os.makedirs(folder_path, exist_ok=True)
+            # Set permissions on the base directory to ensure it's accessible
+            if os.path.exists(base_path):
+                os.chown(base_path, 33, 33)
+                os.chmod(base_path, 0o775)
             # Set folder permissions to allow WebDAV access
             # 775 = owner rwx, group rwx, others rx
             os.chmod(folder_path, 0o775)
