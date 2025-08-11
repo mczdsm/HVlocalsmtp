@@ -12,19 +12,20 @@ mkdir -p "$SCANS_DIR"
 find "$SCANS_DIR" -maxdepth 1 -type d -not -path "$SCANS_DIR" | while read -r user_dir; do
     echo "Setting permissions for $user_dir"
     
-    # Set directory permissions: owner can rwx, group can rx, others can rx
-    # This prevents deletion of the folder itself by winuser
-    # Set directory permissions: owner can rwx, group can rx, others can rx
+    # Set base directory permissions for the user directory: owner rwx, group rx, others rx
     # This prevents deletion of the folder itself by winuser
     chmod 755 "$user_dir"
 
-    # Set default ACLs for new files/directories created within this folder
-    # This ensures that new files/dirs inherit group write permissions
-    setfacl -d -m g:1001:rwx "$user_dir"
+    # Set default ACL for new files and directories created within this specific user folder
+    # This ensures files created by smtp_receiver.py get correct permissions
+    setfacl -d -m u::rwX,g:1001:rwX,o::rX "$user_dir"
     
-    # Set permissions for all files in the directory: owner and group can rw, others can r
-    # This allows winuser (in group 1001) to modify/delete files
-    find "$user_dir" -type f -exec chmod 664 {} \;
+    # Apply ACL to existing files in the directory: owner rw, group rw, others r
+    # This ensures winuser can modify/delete existing files
+    find "$user_dir" -type f -exec setfacl -m u::rw,g:1001:rw,o::r {} \;
+    
+    # Apply the ACL mask for files to rw
+    find "$user_dir" -type f -exec setfacl -m m::rw {} \;
     
     # Ensure ownership is consistent (1001:1001 matches the Samba user)
     chown -R 1001:1001 "$user_dir"
