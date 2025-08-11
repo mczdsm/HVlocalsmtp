@@ -57,6 +57,7 @@ class CustomHandler:
         try:
             os.makedirs(folder_path, exist_ok=True)
             logger.debug(f"Ensured directory exists: {folder_path}")
+            os.chmod(folder_path, 0o755)
         except OSError as e:
             logger.error(f"Could not create directory {folder_path}: {e}")
             return '500 Internal server error'
