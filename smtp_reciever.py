@@ -58,7 +58,7 @@ class CustomHandler:
             os.makedirs(folder_path, exist_ok=True)
             # Set folder permissions to allow Samba access but prevent folder deletion
             # 755 = owner rwx, group/others rx (can't delete folder)
-            os.chmod(folder_path, 0o755)
+            os.chmod(folder_path, 0o777)
             # Set ownership to match Samba user (1001:1001)
             os.chown(folder_path, 1001, 1001)
             logger.debug(f"Ensured directory exists: {folder_path}")
@@ -87,8 +87,8 @@ class CustomHandler:
                     with open(final_filepath, 'wb') as f:
                         f.write(part.get_payload(decode=True))
                     # Set file permissions and ownership for Samba compatibility
-                    # 664 = owner/group can read/write, others can read
-                    os.chmod(final_filepath, 0o664)
+                    # 666 = owner/group/others can read/write
+                    os.chmod(final_filepath, 0o666)
                     # Set ownership to match Samba user (1001:1001)
                     os.chown(final_filepath, 1001, 1001)
                     logger.info(f"Saved PDF scan '{filename}' to user folder '{local_part}'")
