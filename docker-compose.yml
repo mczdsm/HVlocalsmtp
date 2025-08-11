@@ -30,8 +30,8 @@ services:
       - USERNAME=webuser
       - PASSWORD=YourWebDAVPassword
     volumes:
-      # Mount the named volume to the default WebDAV data directory.
-      - scan_data:/var/lib/dav
+      # Mount the named volume to the path where smtp-receiver writes files.
+      - scan_data:/scans
     restart: unless-stopped
 
 volumes:
