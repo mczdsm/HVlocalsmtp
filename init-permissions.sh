@@ -14,7 +14,7 @@ find "$SCANS_DIR" -maxdepth 1 -type d -not -path "$SCANS_DIR" | while read -r us
     
     # Set directory permissions: owner can rwx, group can rx, others can rx
     # This prevents deletion of the folder itself by winuser
-    chmod 755 "$user_dir"
+    chmod 775 "$user_dir"
     
     # Set permissions for all files in the directory: owner and group can rw, others can r
     # This allows winuser (in group 1001) to modify/delete files
