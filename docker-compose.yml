@@ -21,7 +21,9 @@ services:
     restart: unless-stopped
 
   samba:
-    image: dperson/samba:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.samba
     container_name: samba-server
     # IMPORTANT: Replace 'YourStrongPassword' with a secure password.
     environment:

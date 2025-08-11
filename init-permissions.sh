@@ -14,7 +14,13 @@ find "$SCANS_DIR" -maxdepth 1 -type d -not -path "$SCANS_DIR" | while read -r us
     
     # Set directory permissions: owner can rwx, group can rx, others can rx
     # This prevents deletion of the folder itself by winuser
-    chmod 775 "$user_dir"
+    # Set directory permissions: owner can rwx, group can rx, others can rx
+    # This prevents deletion of the folder itself by winuser
+    chmod 755 "$user_dir"
+
+    # Set default ACLs for new files/directories created within this folder
+    # This ensures that new files/dirs inherit group write permissions
+    setfacl -d -m g:1001:rwx "$user_dir"
     
     # Set permissions for all files in the directory: owner and group can rw, others can r
     # This allows winuser (in group 1001) to modify/delete files

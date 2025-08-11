@@ -1,0 +1,9 @@
+FROM dperson/samba:latest
+
+# Install ACL utilities
+RUN apk add --no-cache acl
+
+# Copy any custom Samba configuration if needed (not strictly necessary for this task, but good practice)
+# COPY smb.conf /etc/samba/smb.conf
+
+# The entrypoint from dperson/samba will handle the rest
