@@ -3,9 +3,66 @@ from aiosmtpd.controller import Controller
 from aiosmtpd.smtp import Envelope, Session
 import email
 import os
+import re
 from email import policy
 from email.parser import BytesParser
 from logger_config import logger
+
+def _validate_local_part(local_part):
+    """
+    Validates that the local part of an email address is safe for use as a folder name.
+    Only allows alphanumeric characters, dots, hyphens, and underscores.
+    Prevents path traversal and other directory injection attacks.
+    """
+    if not local_part:
+        return False
+    
+    if len(local_part) > 64:
+        return False
+    
+    if local_part in ['.', '..']:
+        return False
+    
+    if re.match(r'^[a-zA-Z0-9._-]+$', local_part):
+        return True
+    
+    return False
+
+def _sanitize_filename(filename):
+    """
+    Sanitizes a filename by removing or replacing unsafe characters.
+    Prevents path traversal and ensures filesystem compatibility.
+    """
+    if not filename:
+        return 'scan.pdf'
+    
+    filename = os.path.basename(filename)
+    
+    filename = re.sub(r'[^\w\s.-]', '_', filename)
+    
+    filename = filename.strip('. ')
+    
+    if not filename or filename in ['.', '..']:
+        filename = 'scan.pdf'
+    
+    if not filename.lower().endswith('.pdf'):
+        filename = filename + '.pdf'
+    
+    if len(filename) > 255:
+        name, ext = os.path.splitext(filename)
+        filename = name[:251] + ext
+    
+    return filename
+
+def _validate_pdf_content(content):
+    """
+    Basic validation to check if content appears to be a PDF file.
+    Checks for PDF magic header.
+    """
+    if not content or len(content) < 8:
+        return False
+    
+    return content.startswith(b'%PDF-')
 
 def _find_unique_filepath(filepath):
     """
@@ -51,15 +108,20 @@ class CustomHandler:
         local_part = to_address.split('@')[0]
         logger.debug(f"Determined local part as: {local_part}")
         
+        # Validate local part to prevent path traversal
+        if not _validate_local_part(local_part):
+            logger.error(f"Invalid local part '{local_part}' - contains unsafe characters")
+            return '550 Invalid recipient format'
+        
         # Create folder if it doesn't exist
-        base_path = '/scans/users/'
+        base_path = os.environ.get('SCANS_BASE_PATH', '/scans/users/')
         folder_path = os.path.join(base_path, local_part)
         try:
             os.makedirs(folder_path, exist_ok=True)
-            # Set folder permissions to allow Samba access but prevent folder deletion
-            # 755 = owner rwx, group/others rx (can't delete folder)
-            os.chmod(folder_path, 0o777)
-            # Set ownership to match Samba user (1001:1001)
+            # Set folder permissions: owner rwx, group rwx, others rx  
+            # This allows Samba user (in group 1001) to create/modify files but not delete folder
+            os.chmod(folder_path, 0o775)
+            # Set ownership to match Samba user configuration (1001:1001)
             os.chown(folder_path, 1001, 1001)
             logger.debug(f"Ensured directory exists: {folder_path}")
         except OSError as e:
@@ -68,12 +130,34 @@ class CustomHandler:
         
         # Extract and save attachments
         attachment_count = 0
+        max_file_size = int(os.environ.get('MAX_FILE_SIZE_MB', '50')) * 1024 * 1024  # Default 50MB
+        
         for part in msg.iter_attachments():
             if part.get_content_type() == 'application/pdf':
+                # Get and sanitize filename
                 filename = part.get_filename()
-                if not filename:
-                    filename = 'scan.pdf'
-                    logger.debug("Attachment has no filename, defaulting to 'scan.pdf'")
+                filename = _sanitize_filename(filename)
+                
+                # Get file content and validate
+                try:
+                    content = part.get_payload(decode=True)
+                    if not content:
+                        logger.debug("Empty PDF attachment, skipping")
+                        continue
+                        
+                    # Check file size limit
+                    if len(content) > max_file_size:
+                        logger.warning(f"PDF attachment '{filename}' exceeds size limit ({len(content)} bytes), skipping")
+                        continue
+                    
+                    # Validate PDF content
+                    if not _validate_pdf_content(content):
+                        logger.warning(f"Attachment '{filename}' does not appear to be a valid PDF, skipping")
+                        continue
+                        
+                except Exception as e:
+                    logger.error(f"Failed to process attachment {filename}: {e}")
+                    continue
 
                 original_filepath = os.path.join(folder_path, filename)
                 final_filepath = _find_unique_filepath(original_filepath)
@@ -85,13 +169,13 @@ class CustomHandler:
 
                 try:
                     with open(final_filepath, 'wb') as f:
-                        f.write(part.get_payload(decode=True))
-                    # Set file permissions and ownership for Samba compatibility
-                    # 666 = owner/group/others can read/write
-                    os.chmod(final_filepath, 0o666)
-                    # Set ownership to match Samba user (1001:1001)
+                        f.write(content)
+                    # Set secure file permissions: owner/group rw, others r
+                    # This allows Samba user (in group 1001) to modify/delete files
+                    os.chmod(final_filepath, 0o664)
+                    # Set ownership to match Samba user configuration (1001:1001)
                     os.chown(final_filepath, 1001, 1001)
-                    logger.info(f"Saved PDF scan '{filename}' to user folder '{local_part}'")
+                    logger.info(f"Saved PDF scan '{filename}' to user folder '{local_part}' ({len(content)} bytes)")
                     attachment_count += 1
                 except Exception as e:
                     logger.error(f"Failed to save attachment {filename} to {final_filepath}: {e}")
@@ -104,17 +188,23 @@ class CustomHandler:
         return '250 OK'
 
 async def main():
-    # Check if Test Mode is enabled
-    if os.environ.get('TEST_MODE', 'false').lower() == 'true':
-        from test_sender import run_test_mailer
-        # Start the test mailer as a background task
-        asyncio.create_task(run_test_mailer())
+    # Start test mode if enabled
+    try:
+        from test_mode import start_test_mode
+        await start_test_mode()
+    except ImportError:
+        logger.debug("Test mode module not available")
 
     logger.info("Starting SMTP server...")
     handler = CustomHandler()
-    controller = Controller(handler, hostname='0.0.0.0', port=1025)
+    
+    # Get server configuration from environment
+    host = os.environ.get('SMTP_HOST', '0.0.0.0')
+    port = int(os.environ.get('SMTP_PORT', '1025'))
+    
+    controller = Controller(handler, hostname=host, port=port)
     controller.start()
-    logger.info("SMTP server is listening on port 1025.")
+    logger.info(f"SMTP server is listening on {host}:{port}")
     await asyncio.Event().wait()
 
 if __name__ == '__main__':
