@@ -12,13 +12,13 @@ mkdir -p "$SCANS_DIR"
 find "$SCANS_DIR" -maxdepth 1 -type d -not -path "$SCANS_DIR" | while read -r user_dir; do
     echo "Setting secure permissions for $user_dir"
     
-    # Set directory permissions: owner rwx, group rwx, others rx
-    # This allows Samba user to create/modify files but prevents folder deletion by others
-    chmod 775 "$user_dir"
+    # Set directory permissions: owner/group/others rwx
+    # This allows all users including Windows users to create/modify/delete files
+    chmod 777 "$user_dir"
     
-    # Set permissions for all files in the directory: owner/group rw, others r
-    # This allows Samba user (in group 1001) to modify/delete files but not others
-    find "$user_dir" -type f -exec chmod 664 {} \;
+    # Set permissions for all files in the directory: owner/group/others rw
+    # This allows all users including Windows users to modify/delete files
+    find "$user_dir" -type f -exec chmod 666 {} \;
     
     # Ensure ownership is consistent (1001:1001 matches the Samba user)
     chown -R 1001:1001 "$user_dir"
