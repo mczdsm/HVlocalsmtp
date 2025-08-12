@@ -1,0 +1,4 @@
+2025-08-12 04:07:13,429 - Logging configured for PRODUCTION mode.
+2025-08-12 04:07:13,430 - Starting SMTP server...
+2025-08-12 04:07:13,437 - SMTP server is listening on 0.0.0.0:1025
+2025-08-12 04:07:45,129 - Saved PDF scan 'Encounter_History_Report.pdf' to user folder 'tom' (11215 bytes)

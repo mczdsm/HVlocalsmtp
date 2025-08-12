@@ -10,11 +10,13 @@ services:
       # Mount the named volume to the path the application expects.
       # The app writes to /scans/users, so we mount the volume at /scans.
       - scan_data:/scans
+      # Mount logs directory to host (outside of shared folder)
+      - ./logs:/logs
     environment:
       # LOGGING_MODE: 'DEBUG' or 'PRODUCTION'.
       # - DEBUG: Verbose console logging.
       # - PRODUCTION: Separates audit and error logs into files.
-      - LOGGING_MODE=DEBUG
+      - LOGGING_MODE=PRODUCTION
       # TEST_MODE: 'true' or 'false'.
       # - true: Enables automatic sending of test emails to the server.
       - TEST_MODE=false
@@ -23,7 +25,7 @@ services:
       - MAX_FILE_SIZE_MB=50
       - SMTP_HOST=0.0.0.0
       - SMTP_PORT=1025
-      - LOG_PATH=/scans/users
+      - LOG_PATH=/logs
     # Security hardening
     read_only: false  # Need write access for scans directory
     security_opt:
