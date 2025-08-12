@@ -8,6 +8,14 @@ from email import policy
 from email.parser import BytesParser
 from logger_config import logger
 
+# Dictionary mapping allowed content types to their properties
+ALLOWED_CONTENT_TYPES = {
+    'application/pdf': {'ext': '.pdf', 'magic': b'%PDF-'},
+    'image/tiff': {'ext': '.tif', 'magic': (b'II*\x00', b'MM\x00*')},
+    'image/jpeg': {'ext': '.jpg', 'magic': b'\xff\xd8\xff'},
+    'image/png': {'ext': '.png', 'magic': b'\x89PNG\r\n\x1a\n'}
+}
+
 def _validate_local_part(local_part):
     """
     Validates that the local part of an email address is safe for use as a folder name.
@@ -28,41 +36,51 @@ def _validate_local_part(local_part):
     
     return False
 
-def _sanitize_filename(filename):
+def _sanitize_filename(filename, content_type):
     """
     Sanitizes a filename by removing or replacing unsafe characters.
     Prevents path traversal and ensures filesystem compatibility.
+    Appends the correct file extension based on content type if missing.
     """
+    default_ext = ALLOWED_CONTENT_TYPES.get(content_type, {}).get('ext', '.bin')
+    
     if not filename:
-        return 'scan.pdf'
-    
+        return 'scan' + default_ext
+
     filename = os.path.basename(filename)
-    
     filename = re.sub(r'[^\w\s.-]', '_', filename)
-    
     filename = filename.strip('. ')
-    
+
     if not filename or filename in ['.', '..']:
-        filename = 'scan.pdf'
-    
-    if not filename.lower().endswith('.pdf'):
-        filename = filename + '.pdf'
+        return 'scan' + default_ext
+
+    # Check if filename already has a valid extension
+    _, current_ext = os.path.splitext(filename)
+    if not any(filename.lower().endswith(ext) for ext in [ct['ext'] for ct in ALLOWED_CONTENT_TYPES.values()]):
+        filename += default_ext
     
     if len(filename) > 255:
         name, ext = os.path.splitext(filename)
-        filename = name[:251] + ext
+        filename = name[:(255 - len(ext))] + ext
     
     return filename
 
-def _validate_pdf_content(content):
+def _validate_content(content, content_type):
     """
-    Basic validation to check if content appears to be a PDF file.
-    Checks for PDF magic header.
+    Basic validation to check if content appears to be a valid file of the given type.
+    Checks for magic bytes/headers.
     """
+    if content_type not in ALLOWED_CONTENT_TYPES:
+        return False
+
     if not content or len(content) < 8:
         return False
     
-    return content.startswith(b'%PDF-')
+    magic = ALLOWED_CONTENT_TYPES[content_type]['magic']
+    if isinstance(magic, tuple):
+        return any(content.startswith(m) for m in magic)
+    else:
+        return content.startswith(magic)
 
 def _find_unique_filepath(filepath):
     """
@@ -135,26 +153,27 @@ class CustomHandler:
         max_file_size = int(os.environ.get('MAX_FILE_SIZE_MB', '50')) * 1024 * 1024  # Default 50MB
         
         for part in msg.iter_attachments():
-            if part.get_content_type() == 'application/pdf':
+            content_type = part.get_content_type()
+            if content_type in ALLOWED_CONTENT_TYPES:
                 # Get and sanitize filename
                 filename = part.get_filename()
-                filename = _sanitize_filename(filename)
+                filename = _sanitize_filename(filename, content_type)
                 
                 # Get file content and validate
                 try:
                     content = part.get_payload(decode=True)
                     if not content:
-                        logger.debug("Empty PDF attachment, skipping")
+                        logger.debug(f"Empty attachment ({content_type}), skipping")
                         continue
                         
                     # Check file size limit
                     if len(content) > max_file_size:
-                        logger.warning(f"PDF attachment '{filename}' exceeds size limit ({len(content)} bytes), skipping")
+                        logger.warning(f"Attachment '{filename}' exceeds size limit ({len(content)} bytes), skipping")
                         continue
                     
-                    # Validate PDF content
-                    if not _validate_pdf_content(content):
-                        logger.warning(f"Attachment '{filename}' does not appear to be a valid PDF, skipping")
+                    # Validate content
+                    if not _validate_content(content, content_type):
+                        logger.warning(f"Attachment '{filename}' does not appear to be a valid {content_type}, skipping")
                         continue
                         
                 except Exception as e:
@@ -178,15 +197,15 @@ class CustomHandler:
                     # Set ownership to match Samba user configuration (1001:1001)
 
                     os.chown(final_filepath, 1001, 1001)
-                    logger.info(f"Saved PDF scan '{filename}' to user folder '{local_part}' ({len(content)} bytes)")
+                    logger.info(f"Saved scan '{filename}' to user folder '{local_part}' ({len(content)} bytes)")
                     attachment_count += 1
                 except Exception as e:
                     logger.error(f"Failed to save attachment {filename} to {final_filepath}: {e}")
             else:
-                logger.debug(f"Skipping non-PDF attachment with content type: {part.get_content_type()}")
+                logger.debug(f"Skipping attachment with unsupported content type: {content_type}")
 
         if attachment_count == 0:
-            logger.debug("No PDF attachments found in the email.")
+            logger.debug("No supported attachments found in the email.")
 
         return '250 OK'
 
