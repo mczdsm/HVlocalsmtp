@@ -3,7 +3,7 @@
 # This script sets up proper permissions for the user folders
 # It should be run as part of container startup or as a periodic maintenance task
 
-SCANS_DIR="/scans/users"
+SCANS_DIR="/scans"
 
 # Create the base users directory if it doesn't exist
 mkdir -p "$SCANS_DIR"
