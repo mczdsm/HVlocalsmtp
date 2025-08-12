@@ -10,41 +10,92 @@ services:
       # Mount the named volume to the path the application expects.
       # The app writes to /scans/users, so we mount the volume at /scans.
       - scan_data:/scans
+      # Mount logs directory to host (outside of shared folder)
+      - ./logs:/logs
     environment:
       # LOGGING_MODE: 'DEBUG' or 'PRODUCTION'.
       # - DEBUG: Verbose console logging.
       # - PRODUCTION: Separates audit and error logs into files.
-      - LOGGING_MODE=DEBUG
+      - LOGGING_MODE=PRODUCTION
       # TEST_MODE: 'true' or 'false'.
       # - true: Enables automatic sending of test emails to the server.
       - TEST_MODE=false
+      # Security Configuration
+      - SCANS_BASE_PATH=/scans/users
+      - MAX_FILE_SIZE_MB=50
+      - SMTP_HOST=0.0.0.0
+      - SMTP_PORT=1025
+      - LOG_PATH=/logs
+    # Security hardening
+    read_only: false  # Need write access for scans directory
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - FOWNER
+      - DAC_OVERRIDE
+      - SETUID
+      - SETGID
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "python -c 'import socket; socket.create_connection((\"localhost\", 1025), timeout=5)'"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
 
   samba:
     build:
       context: .
       dockerfile: Dockerfile.samba
     container_name: samba-server
-    # IMPORTANT: Replace 'YourStrongPassword' with a secure password.
+    # SECURITY WARNING: Change the default password before deployment!
+    # Generate a strong password and replace CHANGE_THIS_PASSWORD
     environment:
-      - USER=winuser;YourStrongPassword;;filemanagers;1001
+      - USER=winuser;TestPassword123!;1001;filemanagers
       - GROUP=filemanagers;1001
       # Defines a share named 'scans' that points to the /srv/scans directory inside this container.
       - SHARE=scans;/srv/scans;yes;no;no;@filemanagers
-      # Set file and directory creation masks to allow group write permissions
+      # Secure file and directory creation masks
       - CREATE_MASK=0664
       - DIRECTORY_MASK=0755
       # - PERMISSIONS=true # Disable default permissions to allow init-permissions.sh to take full control
       # Force user and group to ensure consistent ownership
       - FORCE_USER=1001
       - FORCE_GROUP=1001
+      # Additional security settings
+      - WORKGROUP=WORKGROUP
+      - SMB_MIN_PROTOCOL=SMB2_10
     ports:
       - "139:139"
       - "445:445"
     volumes:
       # Mount the named volume to the path that the SHARE variable uses.
       - scan_data:/srv/scans
+    # Security hardening
+    read_only: false
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - DAC_OVERRIDE
+      - FOWNER
+      - NET_BIND_SERVICE
+      - SETGID
+      - SETUID
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "smbclient", "-L", "localhost", "-U%"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
 
 volumes:
   scan_data:
