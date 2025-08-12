@@ -49,7 +49,9 @@ services:
       start_period: 10s
 
   samba:
-    image: dperson/samba:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.samba
     container_name: samba-server
     # SECURITY WARNING: Change the default password before deployment!
     # Generate a strong password and replace CHANGE_THIS_PASSWORD
@@ -61,7 +63,7 @@ services:
       # Secure file and directory creation masks
       - CREATE_MASK=0664
       - DIRECTORY_MASK=0755
-      - PERMISSIONS=true
+      # - PERMISSIONS=true # Disable default permissions to allow init-permissions.sh to take full control
       # Force user and group to ensure consistent ownership
       - FORCE_USER=1001
       - FORCE_GROUP=1001

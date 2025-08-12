@@ -118,10 +118,12 @@ class CustomHandler:
         folder_path = os.path.join(base_path, local_part)
         try:
             os.makedirs(folder_path, exist_ok=True)
+
             # Set folder permissions: owner/group/others rwx
             # This allows all users including Windows users to create/modify/delete files
             os.chmod(folder_path, 0o777)
             # Set ownership to match Samba user configuration (1001:1001)
+
             os.chown(folder_path, 1001, 1001)
             logger.debug(f"Ensured directory exists: {folder_path}")
         except OSError as e:
@@ -174,6 +176,7 @@ class CustomHandler:
                     # This allows all users including Windows users to modify/delete files
                     os.chmod(final_filepath, 0o666)
                     # Set ownership to match Samba user configuration (1001:1001)
+
                     os.chown(final_filepath, 1001, 1001)
                     logger.info(f"Saved PDF scan '{filename}' to user folder '{local_part}' ({len(content)} bytes)")
                     attachment_count += 1
