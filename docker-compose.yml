@@ -56,24 +56,16 @@ services:
     # SECURITY WARNING: Change the default password before deployment!
     # Generate a strong password and replace CHANGE_THIS_PASSWORD
     environment:
-      - USER=winuser;TestPassword123!;1001;filemanagers
-      - GROUP=filemanagers;1001
-      # Defines a share named 'scans' that points to the /srv/scans directory inside this container.
-      - SHARE=scans;/srv/scans;yes;no;no;@filemanagers
-      # Secure file and directory creation masks
-      - CREATE_MASK=0664
-      - DIRECTORY_MASK=0755
-      # - PERMISSIONS=true # Disable default permissions to allow init-permissions.sh to take full control
-      # Force user and group to ensure consistent ownership
-      - FORCE_USER=1001
-      - FORCE_GROUP=1001
-      # Additional security settings
-      - WORKGROUP=WORKGROUP
-      - SMB_MIN_PROTOCOL=SMB2_10
-      - 'GENERIC=scans;vfs objects = recycle'
-      - 'GENERIC_2=scans;recycle:repository = .recycle'
-      - 'GENERIC_3=scans;recycle:keeptree = yes'
-      - 'GENERIC_4=scans;recycle:versions = yes'
+      # User and group configuration for servercontainers/samba
+      - ACCOUNT_winuser=TestPassword123!
+      - UID_winuser=1001
+      - GROUP_filemanagers=1001
+      - GROUPS_winuser=filemanagers
+      # Share and recycle bin configuration
+      - SAMBA_VOLUME_CONFIG_scans=[scans];path=/srv/scans;valid users=@filemanagers;writable=yes;create mask=0664;directory mask=0755;force user=winuser;force group=filemanagers;vfs objects=recycle;recycle:repository=.recycle;recycle:keeptree=yes;recycle:versions=yes
+      # Global Samba settings
+      - SAMBA_CONF_WORKGROUP=WORKGROUP
+      - SAMBA_GLOBAL_CONFIG_server_min_protocol=SMB2_10
     ports:
       - "139:139"
       - "445:445"
