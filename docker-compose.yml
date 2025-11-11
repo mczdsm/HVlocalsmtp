@@ -58,14 +58,12 @@ services:
     environment:
       # User and group configuration for servercontainers/samba
       - ACCOUNT_winuser=TestPassword123!
-      - UID_winuser=1001
-      - GROUP_filemanagers=1001
       - GROUPS_winuser=filemanagers
       # Share and recycle bin configuration
       - SAMBA_VOLUME_CONFIG_scans=[scans];path=/srv/scans;valid users=@filemanagers;writable=yes;create mask=0664;directory mask=0755;force user=winuser;force group=filemanagers;vfs objects=recycle;recycle:repository=.recycle;recycle:keeptree=yes;recycle:versions=yes
       # Global Samba settings
       - SAMBA_CONF_WORKGROUP=WORKGROUP
-      - SAMBA_GLOBAL_CONFIG_server_min_protocol=SMB2_10
+      - SAMBA_GLOBAL_CONFIG_server_SPACE_min_SPACE_protocol=SMB2_10
     ports:
       - "139:139"
       - "445:445"
