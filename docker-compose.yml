@@ -70,6 +70,10 @@ services:
       # Additional security settings
       - WORKGROUP=WORKGROUP
       - SMB_MIN_PROTOCOL=SMB2_10
+      - 'GENERIC=scans;vfs objects = recycle'
+      - 'GENERIC_2=scans;recycle:repository = .recycle'
+      - 'GENERIC_3=scans;recycle:keeptree = yes'
+      - 'GENERIC_4=scans;recycle:versions = yes'
     ports:
       - "139:139"
       - "445:445"
