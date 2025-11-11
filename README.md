@@ -67,6 +67,63 @@ This application includes several security enhancements:
 
 ## Deployment
 
+### Deployment without Docker (Debian-based Systems)
+
+This project includes scripts for deploying the application on a bare-metal Debian-based system, such as an LXC container on Proxmox. These scripts automate the installation of dependencies, user creation, and service configuration.
+
+**IMPORTANT:** These scripts require `sudo` or root access to run.
+
+#### 1. Configuration
+
+Before running the deployment scripts, you can customize the settings by creating a `.env` file. A template is provided in `.env.example`:
+
+```bash
+cp .env.example .env
+```
+
+Now, open the `.env` file and change the `SAMBA_PASSWORD` to a strong, unique password. You can also adjust other settings as needed.
+
+#### 2. Test Deployment
+
+The `test.sh` script is designed for quickly setting up a test environment. It will:
+- Install all necessary dependencies.
+- Clone the repository if run in an empty directory.
+- Create a dedicated user for the application.
+- Configure the application for test mode (`TEST_MODE=true`).
+- Run the application in the foreground for easy debugging.
+
+To run the test script:
+```bash
+sudo ./test.sh
+```
+
+#### 3. Production Deployment
+
+The `production.sh` script sets up a production-ready environment. It will:
+- Perform all the same initial setup steps as `test.sh`.
+- Configure the application for production (`TEST_MODE=false`, `LOGGING_MODE=PRODUCTION`).
+- Install and configure a Samba server.
+- Set up a `systemd` service to run the application automatically in the background.
+
+To run the production script:
+```bash
+sudo ./production.sh
+```
+
+If you have already run `test.sh`, you can simply run `production.sh` afterward to switch to production mode.
+
+#### 4. Resetting the Environment
+
+The `reset.sh` script will completely remove the application and all its related files from the system. It will:
+- Stop and disable the `systemd` service.
+- Delete the project files and the `/srv/scans` directory.
+- Remove the dedicated application user.
+
+To reset the environment:
+```bash
+sudo ./reset.sh
+```
+
 ### Security-First Deployment
 
 **⚠️ CRITICAL SECURITY STEPS - DO NOT SKIP ⚠️**
