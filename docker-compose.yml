@@ -57,7 +57,8 @@ services:
     # Generate a strong password and replace CHANGE_THIS_PASSWORD
     environment:
       # User and group configuration for servercontainers/samba
-      - ACCOUNT_winuser=TestPassword123!
+      - ACCOUNT_winuser=TestPassword123
+      - GROUP_filemanagers
       - GROUPS_winuser=filemanagers
       # Share and recycle bin configuration
       - SAMBA_VOLUME_CONFIG_scans=[scans];path=/srv/scans;valid users=@filemanagers;writable=yes;create mask=0664;directory mask=0755;force user=winuser;force group=filemanagers;vfs objects=recycle;recycle:repository=.recycle;recycle:keeptree=yes;recycle:versions=yes
