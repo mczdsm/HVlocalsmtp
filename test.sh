@@ -47,6 +47,12 @@ else
     git pull
 fi
 
+# Fix incorrect filename from repository
+if [ -f "smtp_reciever.py" ]; then
+    print_info "Correcting filename typo: smtp_reciever.py -> smtp_receiver.py"
+    mv smtp_reciever.py smtp_receiver.py
+fi
+
 # 3. Create Application User
 APP_USER="smtp-receiver"
 if id "$APP_USER" &>/dev/null; then
