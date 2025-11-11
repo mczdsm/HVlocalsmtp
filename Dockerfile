@@ -17,10 +17,10 @@ COPY init-permissions.sh ./
 RUN chmod +x init-permissions.sh
 
 # Create scans directory with proper ownership and make writable for volume mounting
-RUN mkdir -p /scans/users && \
-    chown -R appuser:appgroup /scans && \
-    chmod 775 /scans && \
-    chmod 775 /scans/users
+RUN mkdir -p /srv/scans/users && \
+    chown -R appuser:appgroup /srv/scans && \
+    chmod 775 /srv/scans && \
+    chmod 775 /srv/scans/users
 
 # Change ownership of app directory
 RUN chown -R appuser:appgroup /app
@@ -33,11 +33,11 @@ RUN echo '#!/bin/bash' > /entrypoint.sh && \
     echo 'set -e' >> /entrypoint.sh && \
     echo '' >> /entrypoint.sh && \
     echo '# Fix permissions for mounted volume' >> /entrypoint.sh && \
-    echo 'chown -R 1001:1001 /scans' >> /entrypoint.sh && \
-    echo 'chmod 775 /scans' >> /entrypoint.sh && \
-    echo 'mkdir -p /scans/users' >> /entrypoint.sh && \
-    echo 'chown -R 1001:1001 /scans/users' >> /entrypoint.sh && \
-    echo 'chmod 775 /scans/users' >> /entrypoint.sh && \
+    echo 'chown -R 1001:1001 /srv/scans' >> /entrypoint.sh && \
+    echo 'chmod 775 /srv/scans' >> /entrypoint.sh && \
+    echo 'mkdir -p /srv/scans/users' >> /entrypoint.sh && \
+    echo 'chown -R 1001:1001 /srv/scans/users' >> /entrypoint.sh && \
+    echo 'chmod 775 /srv/scans/users' >> /entrypoint.sh && \
     echo '' >> /entrypoint.sh && \
     echo '# Run application as root (needed for creating directories with proper ownership)' >> /entrypoint.sh && \
     echo 'exec python smtp_reciever.py' >> /entrypoint.sh && \
