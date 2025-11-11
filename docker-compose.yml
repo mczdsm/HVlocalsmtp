@@ -19,7 +19,7 @@ services:
       - LOGGING_MODE=PRODUCTION
       # TEST_MODE: 'true' or 'false'.
       # - true: Enables automatic sending of test emails to the server.
-      - TEST_MODE=false
+      - TEST_MODE=true
       # Security Configuration
       - SCANS_BASE_PATH=/scans/users
       - MAX_FILE_SIZE_MB=50
