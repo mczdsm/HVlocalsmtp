@@ -71,7 +71,7 @@ This application includes several security enhancements:
 
 This project includes scripts for deploying the application on a bare-metal Debian-based system, such as an LXC container on Proxmox. These scripts automate the installation of dependencies, user creation, and service configuration.
 
-**IMPORTANT:** These scripts require `sudo` or root access to run.
+**IMPORTANT:** These scripts must be run with root privileges. You can do this either by logging in as the `root` user (common in LXC containers) or by using `sudo`.
 
 #### 1. Configuration
 
@@ -94,7 +94,11 @@ The `test.sh` script is designed for quickly setting up a test environment. It w
 
 To run the test script:
 ```bash
+# E.g., with sudo
 sudo ./test.sh
+
+# Or as the root user
+./test.sh
 ```
 
 #### 3. Production Deployment
@@ -107,7 +111,11 @@ The `production.sh` script sets up a production-ready environment. It will:
 
 To run the production script:
 ```bash
+# E.g., with sudo
 sudo ./production.sh
+
+# Or as the root user
+./production.sh
 ```
 
 If you have already run `test.sh`, you can simply run `production.sh` afterward to switch to production mode.
@@ -121,7 +129,11 @@ The `reset.sh` script will completely remove the application and all its related
 
 To reset the environment:
 ```bash
+# E.g., with sudo
 sudo ./reset.sh
+
+# Or as the root user
+./reset.sh
 ```
 
 ### Security-First Deployment

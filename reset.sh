@@ -69,8 +69,8 @@ fi
 
 # 5. Clean Project Directory
 print_info "Cleaning project directory..."
-# Deletes everything except the scripts themselves
-find . -not -name 'test.sh' -not -name 'production.sh' -not -name 'reset.sh' -delete
+# Deletes everything except the scripts themselves and the .git directory
+find . -mindepth 1 -not -name 'test.sh' -not -name 'production.sh' -not -name 'reset.sh' -not -name '.git' -exec rm -rf {} +
 print_info "Project directory cleaned."
 
 print_info "Environment reset complete."

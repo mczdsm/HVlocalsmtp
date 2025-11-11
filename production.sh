@@ -30,13 +30,21 @@ fi
 # 1. Install Dependencies
 print_info "Checking and installing dependencies..."
 apt-get update > /dev/null
-apt-get install -y git python3 python3-pip python3-venv samba > /dev/null
+apt-get install -y git python3 python3-pip python3-venv samba sudo > /dev/null
 print_info "Dependencies installed."
 
 # 2. Clone Repository if Necessary
-if [ -z "$(ls -A .)" ]; then
-    print_info "Current directory is empty. Cloning repository..."
-    git clone https://github.com/mczdsm/HVlocalsmtp.git .
+if [ ! -d ".git" ]; then
+    print_info "No git repository found. Cloning..."
+    # Clone to a temporary directory
+    TMP_DIR=$(mktemp -d)
+    git clone https://github.com/mczdsm/HVlocalsmtp.git "$TMP_DIR"
+    # Copy the contents to the current directory
+    cp -a "$TMP_DIR"/. .
+    rm -rf "$TMP_DIR"
+else
+    print_info "Git repository found. Pulling latest changes..."
+    git pull
 fi
 
 # 3. Create Application User
